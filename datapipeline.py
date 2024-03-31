@@ -28,11 +28,6 @@ def process_arrays(list_of_arrays):
 
 
 
-# Assuming you have the following data
-eeg_data = [...]  # List of EEG data arrays
-image_labels = [...]  # Array of image labels (numbers from 0 to 1995)
-class_names = [...]  # Array of class names
-image_names = [...]  # Array of image names (e.g., "image_001.jpg")
 
 # Parameters
 target_height = 128  # Specify target height for image resizing
