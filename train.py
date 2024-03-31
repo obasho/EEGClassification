@@ -13,19 +13,19 @@ from siamesenetwork import SiameseNetwork
 
 
 in_channels = 128  # Number of input channels (assuming EEG data has 128 channels)
-temp_channels = 10  # Number of temporal channels (choose based on your model architecture)
-out_channels = 1  # Number of output channels (choose based on your model architecture)
+temp_channels = 10  # Number of temporal channels 
+out_channels = 1  # Number of output channels 
 input_width = 470  # Input width (number of time steps in EEG data)
 in_height = 128  # Input height (number of EEG channels)
-temporal_kernel = 33  # Temporal kernel size (choose based on your model architecture)
-temporal_stride = 2  # Temporal stride (choose based on your model architecture)
-temporal_dilation_list = [1,2,4,8,16]  # List of temporal dilation rates (choose based on your model architecture)
-num_temporal_layers = 5  # Number of temporal layers (choose based on your model architecture)
-num_spatial_layers = 4  # Number of spatial layers (choose based on your model architecture)
-spatial_stride = 2  # Spatial stride (choose based on your model architecture)
-num_residual_blocks = 4  # Number of residual blocks (choose based on your model architecture)
-down_kernel = (3,3) # Downsample kernel size (choose based on your model architecture)
-down_stride = 1  # Downsample stride (choose based on your model architecture)
+temporal_kernel = 33  # Temporal kernel size 
+temporal_stride = 2  # Temporal stride 
+temporal_dilation_list = [1,2,4,8,16]  # List of temporal dilation rates 
+num_temporal_layers = 5  # Number of temporal layers 
+num_spatial_layers = 4  # Number of spatial layers 
+spatial_stride = 2  # Spatial stride 
+num_residual_blocks = 4  # Number of residual blocks 
+down_kernel = (3,3) # Downsample kernel size 
+down_stride = 1  # Downsample stride 
 latent_dim = 128  # Dimensionality of the latent space (specified as 128)
 
 num_epochs=100
