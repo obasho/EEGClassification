@@ -4,7 +4,8 @@ import numpy as np
 from datapipeline import map_label_to_image_path
 from datapipeline import load_and_preprocess_image
 from datapipeline import generate_triplets
-
+from datapipeline import process_arrays
+import os
 import tensorflow as tf
 from EEGChannelNet import EegEncoder
 from imagenet import ImageEncoder
@@ -13,19 +14,19 @@ from siamesenetwork import SiameseNetwork
 
 
 in_channels = 128  # Number of input channels (assuming EEG data has 128 channels)
-temp_channels = 10  # Number of temporal channels 
-out_channels = 1  # Number of output channels 
+temp_channels = 10  # Number of temporal channels (choose based on your model architecture)
+out_channels = 1  # Number of output channels (choose based on your model architecture)
 input_width = 470  # Input width (number of time steps in EEG data)
 in_height = 128  # Input height (number of EEG channels)
-temporal_kernel = 33  # Temporal kernel size 
-temporal_stride = 2  # Temporal stride 
-temporal_dilation_list = [1,2,4,8,16]  # List of temporal dilation rates 
-num_temporal_layers = 5  # Number of temporal layers 
-num_spatial_layers = 4  # Number of spatial layers 
-spatial_stride = 2  # Spatial stride 
-num_residual_blocks = 4  # Number of residual blocks 
-down_kernel = (3,3) # Downsample kernel size 
-down_stride = 1  # Downsample stride 
+temporal_kernel = 33  # Temporal kernel size (choose based on your model architecture)
+temporal_stride = 2  # Temporal stride (choose based on your model architecture)
+temporal_dilation_list = [1,2,4,8,16]  # List of temporal dilation rates (choose based on your model architecture)
+num_temporal_layers = 5  # Number of temporal layers (choose based on your model architecture)
+num_spatial_layers = 4  # Number of spatial layers (choose based on your model architecture)
+spatial_stride = 2  # Spatial stride (choose based on your model architecture)
+num_residual_blocks = 4  # Number of residual blocks (choose based on your model architecture)
+down_kernel = (3,3) # Downsample kernel size (choose based on your model architecture)
+down_stride = 1  # Downsample stride (choose based on your model architecture)
 latent_dim = 128  # Dimensionality of the latent space (specified as 128)
 
 num_epochs=100
@@ -33,38 +34,45 @@ num_epochs=100
 
 
 eeg_signals_path = "/home/obasho/Documents/cs671project/data/block/eeg_5_95_std.pth"
-data=torch.load(eeg_signals_path)
 
-image_names=data['images']
-dataset=data['dataset']
-class_names=data['labels']
-eeg_data = []
-image_labels = []
+def dataset(eeg_signals_path):
+    data=torch.load(eeg_signals_path)
+    image_names=data['images']
+    dataset=data['dataset']
+    class_names=data['labels']
+    eeg_data = []
+    image_labels = []
 
-for item in data['dataset']:
-    eegd=np.array(item['eeg'])
-    eeg_data.append(eegd)
-    image_labels.append(item['label'])
+    for item in data['dataset']:
+        eegd=np.array(item['eeg'])
+        eeg_data.append(eegd)
+        image_labels.append(item['label'])
+    # Step 1: Create dataset for EEG data and image labels
+    eeg_data=process_arrays(eeg_data)
+    def map_label_to_image_path(label):
+        class_name = class_names[label.numpy()]
+        image_name = image_names[label.numpy()]
+        image_path = os.path.join('images', class_name, image_name)
+        return image_path
+    eeg_dataset = tf.data.Dataset.from_tensor_slices(eeg_data)
+    label_dataset = tf.data.Dataset.from_tensor_slices(image_labels)
 
-# Step 1: Create dataset for EEG data and image labels
-eeg_dataset = tf.data.Dataset.from_tensor_slices(eeg_data)
-label_dataset = tf.data.Dataset.from_tensor_slices(image_labels)
-
-image_paths_dataset = label_dataset.map(lambda label: tf.py_function(func=map_label_to_image_path, inp=[label], Tout=tf.string))
-image_dataset = image_paths_dataset.map(load_and_preprocess_image)
+    image_paths_dataset = label_dataset.map(lambda label: tf.py_function(func=map_label_to_image_path, inp=[label], Tout=tf.string))
+    image_dataset = image_paths_dataset.map(load_and_preprocess_image)
 
 
-triplet_dataset = tf.data.Dataset.zip((eeg_dataset, image_dataset, label_dataset))
-triplet_dataset = triplet_dataset.map(generate_triplets)
+    triplet_dataset = tf.data.Dataset.zip((eeg_dataset, image_dataset, label_dataset))
+    triplet_dataset = triplet_dataset.map(generate_triplets)
 
 
-# Step 5: Preprocess and shuffle the dataset
-triplet_dataset = triplet_dataset.shuffle(buffer_size=len(eeg_data))
+    # Step 5: Preprocess and shuffle the dataset
+    triplet_dataset = triplet_dataset.shuffle(buffer_size=len(eeg_data))
 
-# Step 6: Batch and prefetch the dataset
-batch_size = 32
-triplet_dataset = triplet_dataset.batch(batch_size)
-triplet_dataset = triplet_dataset.prefetch(tf.data.experimental.AUTOTUNE)
+    # Step 6: Batch and prefetch the dataset
+    batch_size = 32
+    triplet_dataset = triplet_dataset.batch(batch_size)
+    triplet_dataset = triplet_dataset.prefetch(tf.data.experimental.AUTOTUNE)
+    return triplet_dataset
 
 eeg_input_shape = (128, 470, 1)  # Assuming EEG data shape
 image_input_shape = (128, 128, 3)  # Specify image input shape
@@ -82,6 +90,6 @@ siamese_model = SiameseNetwork(eeg_encoder, image_encoder)
 
 
 siamese_model.compile(loss=triplet_loss, optimizer=tf.keras.optimizers.Adam())
-
+triplet_dataset=dataset(eeg_signals_path)
 # Train the model
 siamese_model.fit(triplet_dataset, epochs=num_epochs)

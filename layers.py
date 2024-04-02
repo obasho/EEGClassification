@@ -1,12 +1,12 @@
 import tensorflow as tf
 
-class ConvLayer2D(tf.keras.layers.Layer):
+class ConvLayer1D(tf.keras.layers.Layer):
     def __init__(self, in_channels, out_channels, kernel, stride, padding, dilation):
-        super(ConvLayer2D, self).__init__()
+        super(ConvLayer1D, self).__init__()
 
         self.norm = tf.keras.layers.BatchNormalization()
         self.relu = tf.keras.layers.ReLU()
-        self.conv = tf.keras.layers.Conv2D(
+        self.conv = tf.keras.layers.Conv1D(
             filters=out_channels,
             kernel_size=kernel,
             strides=stride,
@@ -36,11 +36,11 @@ class TemporalBlock(tf.keras.layers.Layer):
         # Compute padding for each temporal layer to have a fixed-size output
         # Output size is controlled by striding to be 1 / 'striding' of the original size
         for dilation in dilation_list:
-            filter_size = kernel_size[1] * dilation[1] - 1
-            temp_pad = tf.math.floor((filter_size - 1) / 2) - 1 * (dilation[1] // 2 - 1)
+            filter_size = kernel_size * dilation - 1
+            temp_pad = tf.math.floor((filter_size - 1) / 2) - 1 * (dilation // 2 - 1)
             padding.append((0, temp_pad))
 
-        self.layers = [ConvLayer2D(
+        self.layers = [ConvLayer1D(
             in_channels, out_channels, kernel_size, stride, padding[i], dilation_list[i]
         ) for i in range(n_layers)]
 
@@ -68,7 +68,7 @@ class SpatialBlock(tf.keras.layers.Layer):
             0
         ) for kernel in kernel_list]
 
-        self.layers = [ConvLayer2D(
+        self.layers = [ConvLayer1D(
             in_channels, out_channels, kernel_list[i], stride, padding[i], 1
         ) for i in range(num_spatial_layers)]
 

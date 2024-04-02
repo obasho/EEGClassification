@@ -25,22 +25,11 @@ def process_arrays(list_of_arrays):
     return processed_arrays
 
 
-
-
-
-
 # Parameters
 target_height = 128  # Specify target height for image resizing
 target_width = 128  # Specify target width for image resizing
 
 
-
-# Step 2: Map image labels to image paths
-def map_label_to_image_path(label):
-    class_name = class_names[label.numpy()]
-    image_name = image_names[label.numpy()]
-    image_path = os.path.join('images', class_name, image_name)
-    return image_path
 
 
 
